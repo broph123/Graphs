@@ -2,8 +2,27 @@ from room import Room
 from player import Player
 from world import World
 
+
 import random
 from ast import literal_eval
+
+
+class Stack():
+    def __init__(self):
+        self.stack = []
+
+    def push(self, value):
+        self.stack.append(value)
+
+    def pop(self):
+        if self.size() > 0:
+            return self.stack.pop()
+        else:
+            return None
+
+    def size(self):
+        return len(self.stack)
+
 
 # Load world
 world = World()
@@ -11,10 +30,10 @@ world = World()
 
 # You may uncomment the smaller graphs for development and testing purposes.
 # map_file = "maps/test_line.txt"
-map_file = "maps/test_cross.txt"
+# map_file = "maps/test_cross.txt"
 # map_file = "maps/test_loop.txt"
 # map_file = "maps/test_loop_fork.txt"
-# map_file = "maps/main_maze.txt"
+map_file = "maps/main_maze.txt"
 
 # Loads the map into a dictionary
 room_graph = literal_eval(open(map_file, "r").read())
@@ -29,14 +48,43 @@ player = Player(world.starting_room)
 # traversal_path = ['n', 'n']
 traversal_path = []
 
-visited = set()
-while len(traversal_path) > 0:
-    next_room = traversal_path.pop()
-    if next_room not in visited:
-        visited.add(next_room)
+# adj_list = {
+#     0: {'n': '?', 's': '?', 'w': '?', 'e': '?'}
+# }
 
-    for rooms in player.current_room.get_exits(next_room):
-        traversal_path.append(rooms)
+
+def oppo_path(direction):
+    if direction == 'n':
+        return 's'
+    if direction == 's':
+        return 'n'
+    if direction == 'e':
+        return 'w'
+    if direction == 'w':
+        return 'e'
+
+
+stack = Stack()
+visited = set()
+
+# stack.append(player)
+while len(visited) < len(world.rooms):
+    path = []
+    exits = player.current_room.get_exits()
+    for exit in exits:
+        if exit != '?' and player.current_room.get_room_in_direction(exit) not in visited:
+            path.append(exit)
+
+    visited.add(player.current_room)
+    if len(path) > 0:
+        move = random.randint(0, len(path) - 1)
+        stack.push(path[move])
+        player.travel(path[move])
+        traversal_path.append(path[move])
+    else:
+        path_tail = stack.pop()
+        player.travel(oppo_path(path_tail))
+        traversal_path.append(oppo_path(path_tail))
 
 
 # TRAVERSAL TEST
